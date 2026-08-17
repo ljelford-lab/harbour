@@ -1,0 +1,9 @@
+{
+  "name": "harbour",
+  "private": true,
+  "version": "1.0.0",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0",
+    "resend": "^3.4.0"
+  }
+}
