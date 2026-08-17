@@ -61,6 +61,8 @@ let state = emptyWeek();                         // the week object currently be
 let mobileDay = null;                            // session-only, which day the mobile single-day view is showing
 let saveTimers = {};                             // per-week debounce timers
 let isOnline = true;                             // flips to false if a save/fetch fails
+let lastSyncError = '';                          // human-readable reason for the last failure, shown in the badge
+let lastSyncNote = '';                           // non-error info (e.g. "server had nothing saved yet")
 let token = localStorage.getItem(TOKEN_KEY) || '';
 
 function readLocalCache(){
@@ -103,15 +105,19 @@ async function apiFetch(path, opts={}){
 async function fetchWeek(iso){
   try{
     const result = await apiFetch(`/.netlify/functions/week?iso=${iso}`);
-    const wk = result && result.data ? result.data : emptyWeek();
+    const hadData = !!(result && result.data);
+    const wk = hadData ? result.data : emptyWeek();
     if(!wk.reflection) wk.reflection = { wentWell:'', notWell:'', improve:'' };
     db.weeks[iso] = wk;
     isOnline = true;
+    lastSyncError = '';
+    lastSyncNote = hadData ? '' : `server has no saved data for ${iso} yet`;
     writeLocalCache();
     return wk;
   }catch(e){
     console.error('Harbour: fetch failed, falling back to local cache.', e);
     isOnline = false;
+    lastSyncError = (e && e.message) ? e.message : String(e);
     const cache = readLocalCache();
     return cache.weeks[iso] || emptyWeek();
   }
@@ -123,10 +129,12 @@ function scheduleSave(iso){
     try{
       await apiFetch(`/.netlify/functions/week?iso=${iso}`, { method:'PUT', body: JSON.stringify(db.weeks[iso]) });
       isOnline = true;
+      lastSyncError = '';
       refreshWeeksIndex();
     }catch(e){
       console.error('Harbour: save failed — your last change is only stored on this device for now.', e);
       isOnline = false;
+      lastSyncError = (e && e.message) ? e.message : String(e);
     }
     updateOnlineBadge();
   }, SAVE_DEBOUNCE_MS);
@@ -1169,8 +1177,13 @@ document.getElementById('tokenInput').addEventListener('keydown', e=>{
 function updateOnlineBadge(){
   const badge = document.getElementById('syncBadge');
   if(!badge) return;
-  badge.textContent = isOnline ? 'Synced' : 'Offline — showing last saved copy';
-  badge.className = 'sync-badge' + (isOnline ? '' : ' offline');
+  if(isOnline){
+    badge.textContent = lastSyncNote ? `Synced (${lastSyncNote})` : 'Synced';
+    badge.className = 'sync-badge';
+  } else {
+    badge.textContent = `Offline: ${lastSyncError || 'unknown error'}`;
+    badge.className = 'sync-badge offline';
+  }
 }
 
 // ============================================================

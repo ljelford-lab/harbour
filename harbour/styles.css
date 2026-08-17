@@ -70,8 +70,10 @@ input, select{ font-family: var(--font-body); }
   color: var(--text-faint);
   padding:4px 9px;
   border:1px solid var(--border);
-  border-radius:99px;
-  white-space:nowrap;
+  border-radius:14px;
+  white-space:normal;
+  max-width:260px;
+  line-height:1.4;
 }
 .sync-badge.offline{ color: var(--amber); border-color: var(--amber-wash); background: var(--amber-wash); }
 
