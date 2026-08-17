@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Harbour</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div id="loadingOverlay" class="loading-overlay">
+  <div class="loading-text">Loading your week…</div>
+</div>
+
+<div id="app">
+
+  <!-- HEADER -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <div class="wordmark">Harbour</div>
+      <div class="week-nav">
+        <button class="btn ghost icon-btn" id="prevWeekBtn" title="Previous week">‹</button>
+        <div class="week-range" id="weekRange">—</div>
+        <button class="btn ghost icon-btn" id="nextWeekBtn" title="Next week">›</button>
+        <button class="btn ghost small" id="todayJumpBtn" style="display:none;">This week</button>
+      </div>
+    </div>
+
+    <div class="tideline" id="tideline" title="Share of this week's goals complete">
+      <div class="tideline-track">
+        <div class="tideline-fill" id="tidelineFill"></div>
+      </div>
+      <div class="tideline-label" id="tidelineLabel">0%</div>
+    </div>
+
+    <nav class="tabs">
+      <button class="tab active" data-view="week">Week</button>
+      <button class="tab" data-view="today">Today</button>
+      <button class="tab" data-view="reflect">Reflect</button>
+    </nav>
+
+    <div class="topbar-actions">
+      <span id="syncBadge" class="sync-badge"></span>
+      <button class="btn ghost" id="planWeekBtn">Plan my week</button>
+      <div class="add-menu">
+        <button class="btn primary" id="addBtn">+ Add</button>
+        <div class="add-dropdown" id="addDropdown">
+          <button data-open="goalModal">Weekly goal</button>
+          <button data-open="taskModal">Task</button>
+          <button data-open="shiftModal">Work shift</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- WEEK VIEW -->
+  <main class="layout" id="weekView">
+
+    <aside class="sidebar">
+      <section class="panel">
+        <h2>Weekly goals</h2>
+        <div class="goal-list" id="goalList"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Unscheduled</h2>
+        <div class="unscheduled-drop" id="unscheduledDrop">
+          <div class="unsched-group">
+            <h3>Goals</h3>
+            <div id="unschedGoals" class="unsched-items"></div>
+          </div>
+          <div class="unsched-group">
+            <h3>Tasks</h3>
+            <div id="unschedTasks" class="unsched-items"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <h2>Past weeks</h2>
+        <div class="unsched-items" id="pastWeeksList"></div>
+      </section>
+    </aside>
+
+    <section class="calendar-wrap">
+      <div class="day-jump-bar" id="dayJumpBar"></div>
+      <div class="calendar-scroll">
+        <div class="calendar-grid" id="calendarGrid">
+          <!-- built by JS -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TODAY VIEW -->
+  <main class="today-layout" id="todayView" style="display:none;">
+    <div class="today-col">
+      <h2>Scheduled</h2>
+      <div id="todayScheduled" class="today-list"></div>
+    </div>
+    <div class="today-col">
+      <h2>Do today</h2>
+      <div id="todayDoToday" class="today-list"></div>
+    </div>
+    <div class="today-col">
+      <h2>Available this week</h2>
+      <div id="todayAvailable" class="today-list"></div>
+    </div>
+  </main>
+
+  <!-- REFLECT VIEW -->
+  <main class="reflect-layout" id="reflectView" style="display:none;">
+    <div class="reflect-inner">
+      <h2>Reflect — <span id="reflectWeekLabel">this week</span></h2>
+      <p class="reflect-hint">A few honest notes now save you repeating the same week twice.</p>
+
+      <label class="reflect-block">
+        <span>What went well</span>
+        <textarea id="reflectWentWell" rows="4" placeholder="What actually worked this week?"></textarea>
+      </label>
+
+      <label class="reflect-block">
+        <span>What didn't go well</span>
+        <textarea id="reflectNotWell" rows="4" placeholder="Where did things slip, and why?"></textarea>
+      </label>
+
+      <label class="reflect-block">
+        <span>How to improve next week</span>
+        <textarea id="reflectImprove" rows="4" placeholder="One or two concrete changes for next week."></textarea>
+      </label>
+    </div>
+  </main>
+
+</div>
+
+<!-- GOAL MODAL -->
+<div class="modal-backdrop" id="goalModal">
+  <div class="modal">
+    <h3>New weekly goal</h3>
+    <label>Title
+      <input type="text" id="goalTitle" placeholder="e.g. Contact 20 potential clients">
+    </label>
+    <label>Measured by
+      <select id="goalType">
+        <option value="completion">Completion — done / not done</option>
+        <option value="time">Time — hours actually completed</option>
+        <option value="quantity">Quantity — a running number</option>
+        <option value="repetitions">Repetitions — number of sessions</option>
+        <option value="checklist">Checklist — several linked tasks</option>
+        <option value="simple">Simple — not started / in progress / complete</option>
+      </select>
+    </label>
+    <div class="row" id="goalTargetRow">
+      <label class="grow">Target
+        <input type="number" id="goalTargetValue" min="0" step="0.5" placeholder="e.g. 6">
+      </label>
+      <label class="grow">Unit
+        <input type="text" id="goalTargetUnit" placeholder="e.g. hours, businesses, sessions">
+      </label>
+    </div>
+    <label>Deadline <span class="muted">(optional)</span>
+      <input type="date" id="goalDeadline">
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close>Cancel</button>
+      <button class="btn primary" id="saveGoal">Save goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- TASK MODAL -->
+<div class="modal-backdrop" id="taskModal">
+  <div class="modal">
+    <h3>New task</h3>
+    <label>Title
+      <input type="text" id="taskTitle" placeholder="e.g. Reply to client">
+    </label>
+    <label>Link to a goal <span class="muted">(optional)</span>
+      <select id="taskGoal"><option value="">— none —</option></select>
+    </label>
+    <label>Deadline <span class="muted">(optional)</span>
+      <input type="date" id="taskDeadline">
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close>Cancel</button>
+      <button class="btn primary" id="saveTask">Save task — leave flexible</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHIFT MODAL -->
+<div class="modal-backdrop" id="shiftModal">
+  <div class="modal">
+    <h3>New work shift</h3>
+    <label>Day
+      <select id="shiftDay"></select>
+    </label>
+    <div class="row">
+      <label class="grow">Start
+        <input type="time" id="shiftStart" value="09:00">
+      </label>
+      <label class="grow">End
+        <input type="time" id="shiftEnd" value="17:00">
+      </label>
+    </div>
+    <label>Label <span class="muted">(optional)</span>
+      <input type="text" id="shiftLabel" placeholder="Sherborne Sports Centre">
+    </label>
+    <div class="modal-actions">
+      <button class="btn ghost" data-close>Cancel</button>
+      <button class="btn primary" id="saveShift">Save shift</button>
+    </div>
+  </div>
+</div>
+
+<!-- BLOCK EDIT MODAL -->
+<div class="modal-backdrop" id="blockModal">
+  <div class="modal">
+    <h3 id="blockModalTitle">Edit session</h3>
+    <div class="row">
+      <label class="grow">Start
+        <input type="time" id="blockStart">
+      </label>
+      <label class="grow">End
+        <input type="time" id="blockEnd">
+      </label>
+    </div>
+    <label style="flex-direction:row; align-items:center; gap:8px;">
+      <input type="checkbox" id="blockCompleted" style="width:auto;">
+      Mark this session complete
+    </label>
+    <div class="modal-actions space-between">
+      <button class="btn danger" id="deleteBlock">Remove from calendar</button>
+      <div class="row" style="gap:8px;">
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn primary" id="saveBlock">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOKEN GATE MODAL -->
+<div class="modal-backdrop" id="tokenGateModal">
+  <div class="modal">
+    <h3>Unlock Harbour</h3>
+    <p class="muted" id="tokenGateMessage" style="font-size:12.5px; line-height:1.5;">Enter the access code you set when you deployed Harbour.</p>
+    <label>Access code
+      <input type="password" id="tokenInput" placeholder="••••••••" autocomplete="off">
+    </label>
+    <div class="modal-actions">
+      <button class="btn primary" id="saveToken">Unlock</button>
+    </div>
+  </div>
+</div>
+
+<!-- SHIFT EDIT MODAL -->
+<div class="modal-backdrop" id="shiftEditModal">
+  <div class="modal">
+    <h3>Edit work shift</h3>
+    <label>Day
+      <select id="shiftEditDay"></select>
+    </label>
+    <div class="row">
+      <label class="grow">Start
+        <input type="time" id="shiftEditStart">
+      </label>
+      <label class="grow">End
+        <input type="time" id="shiftEditEnd">
+      </label>
+    </div>
+    <label>Label <span class="muted">(optional)</span>
+      <input type="text" id="shiftEditLabel">
+    </label>
+    <div class="modal-actions space-between">
+      <button class="btn danger" id="deleteShift">Remove shift</button>
+      <div class="row" style="gap:8px;">
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn primary" id="saveShiftEdit">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PLAN MY WEEK WIZARD -->
+<div class="modal-backdrop" id="planModal">
+  <div class="modal wide">
+    <div class="wizard-head">
+      <h3 id="wizardTitle">Plan my week</h3>
+      <div class="wizard-steps" id="wizardSteps"></div>
+    </div>
+    <div id="wizardBody"></div>
+    <div class="modal-actions space-between">
+      <button class="btn ghost" id="wizardBack">Back</button>
+      <button class="btn primary" id="wizardNext">Next</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
